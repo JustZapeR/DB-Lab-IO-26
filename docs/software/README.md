@@ -336,363 +336,329 @@ from projects_controller import *
 from users_controller import *
 ```
 
-### Projects Controller 
+### Projects Controller
 
 ```python
-from app import app  # Імпорт екземпляру програми Flask з модуля app
-from projects_model import Projects  # Імпорт класу Projects з модуля projects_model
-from flask import request  # Імпорт об'єкту request з Flask для роботи з HTTP-запитами
+from app import app
+from projects_model import Projects
+from flask import request
 
-projects = Projects()  # Створення екземпляру класу Projects для роботи з даними проектів
+projects = Projects();
 
-# Маршрут для отримання всіх проектів
 @app.route("/projects")
 def get_all_projects():
-    return projects.get_all_projects()
+    return projects.get_all_projects();
 
-# Маршрут для отримання проекту за його ідентифікатором
 @app.route("/project/<id>")
 def get_project_by_id(id):
-    return projects.get_project_by_id(id)
+    return projects.get_project_by_id(id);
 
-# Маршрут для додавання нового проекту
 @app.route("/project/add", methods=["POST"])
 def add_project():
-    return projects.add_project(request.form)
+    return projects.add_project(request.form);
 
-# Маршрут для оновлення проекту
 @app.route("/project/update", methods=["PUT"])
 def update_project():
-    return projects.update_project(request.form)
+    return projects.update_project(request.form);
 
-# Маршрут для видалення проекту за його ідентифікатором
 @app.route("/project/delete/<id>", methods=["DELETE"])
 def delete_project(id):
-    return projects.delete_project(id)
-
+    return projects.delete_project(id);
 ```
 
 ### Projects Model
 
 ```py
-import json  # Імпорт модуля для роботи з JSON
-from flask import make_response  # Імпорт функції для створення відповіді Flask
-import mysql.connector  # Імпорт модуля для роботи з MySQL
+import json
+from flask import make_response
+import mysql.connector
 
 class Projects:
     def __init__(self):
         try:
-            # Підключення до бази даних MySQL
-            self.con = mysql.connector.connect(host="localhost", user="root", password="db12345!", database='project_db')
-            self.cur = self.con.cursor(dictionary=True)  # Створення курсора для роботи з даними у вигляді словника
-            self.con.autocommit = True  # Встановлення автоматичного підтвердження для автоматичного збереження змін
-            print("succesful connection")  # Виведення повідомлення про успішне з'єднання
+            self.con = mysql.connector.connect(host="localhost",user="root",password="db12345!",database='project_db');
+            self.cur = self.con.cursor(dictionary=True);
+            self.con.autocommit = True;
+            print("succesful connection");
         except:
-            print("failed")  # Виведення повідомлення про невдале з'єднання
+            print("failed");
+    
 
-    # Отримання всіх проектів
     def get_all_projects(self):
-        self.cur.execute("SELECT * FROM projects")  # Виконання запиту для вибору всіх проектів
+        self.cur.execute("SELECT * FROM projects")
 
-        result = self.cur.fetchall()  # Отримання результату запиту
+        result = self.cur.fetchall()
 
-        # Перевірка наявності проектів
         if (self.cur.rowcount == 0):
-            result = {"message": "There is no projects", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність проектів
+            result = {"message":"There is no projects", "error": "Not Found", "status code": 404};
 
-        return result  # Повернення результату
+        return result;
 
-    # Отримання проекту за його ідентифікатором
-    def get_project_by_id(self, id):
-        if (not str(id).isdigit()):  # Перевірка на правильність формату ідентифікатора
-            return {"message": "Invalid project id", "error": "Bad Request", "status code": 400}  # Створення повідомлення про невірний ідентифікатор
-        self.cur.execute(f"SELECT * FROM projects WHERE id={id}")  # Виконання запиту для вибору проекту за його ідентифікатором
 
-        result = self.cur.fetchall()  # Отримання результату запиту
+    def get_project_by_id(self,id):
+        if (not str(id).isdigit()):
+            return {"message":"Invalid project id", "error": "Bad Request", "status code": 400};
+        self.cur.execute(f"SELECT * FROM projects where id={id}");
 
-        # Перевірка наявності проекту
+        result = self.cur.fetchall()
+
         if (self.cur.rowcount == 0):
-            result = {"message": "There is no project with such id", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність проекту
+            result = {"message":"There is no project with such id", "error": "Not Found", "status code": 404};
 
-        return result  # Повернення результату
+        return result;
 
-    # Додавання нового проекту
-    def add_project(self, data):
-        data = dict(data)  # Конвертація даних у словник
+    def add_project(self,data):
+        data = dict(data);
 
-        return_value = ""  # Ініціалізація змінної для повернення значення
+        return_value = ""
 
-        if (len(data) == 3):  # Перевірка кількості ключів у словнику
-            # Виконання запиту для додавання нового проекту
+        if (len(data) == 3):
             self.cur.execute(f"INSERT INTO projects (Name, Description, Status) VALUES ('{data["Name"]}', '{data["Description"]}', '{data["Status"]}')")
 
-            print(self.cur.rowcount)  # Виведення кількості змінених рядків
-
-            # Перевірка успішності виконання запиту
+            print(self.cur.rowcount);
             if (self.cur.rowcount != 0):
-                return_value = {"message": "Successfully added to database", "status code": 200}  # Створення повідомлення про успішне додавання проекту
+                return_value = {"message":"Successfully added to database", "status code": 200};
             else:
-                return_value = {"message": "Project was not added to database", "error": "Not Acceptable", "status code": 406}  # Створення повідомлення про невдале додавання проекту
+                return_value = {"message":"Project was not added to database", "error": "Not Acceptable", "status code": 406};
         else:
-            return_value = {"message": "Invalid amount of keys", "error": "Bad Request", "status code": 400}  # Створення повідомлення про неправильну кількість ключів у словнику
+            return_value = {"message":"Invalid amount of keys", "error": "Bad Request", "status code": 400};
 
-        return return_value  # Повернення результату
 
-    # Видалення проекту за його ідентифікатором
-    def delete_project(self, id):
-        if (not str(id).isdigit()):  # Перевірка на правильність формату ідентифікатора
-            return {"message": "Invalid project id", "error": "Bad Request", "status code": 400}  # Створення повідомлення про невірний ідентифікатор
+    
+        return return_value;
 
-        # Виконання запитів для видалення проекту та пов'язаних з ним даних
-        self.cur.execute(f"DELETE FROM projects_members WHERE ProjectId={id}")
-        self.cur.execute(f"DELETE FROM tasks WHERE ProjectId={id}")
-        self.cur.execute(f"DELETE FROM reviews WHERE ProjectId={id}")
-        self.cur.execute(f"DELETE FROM payments WHERE ProjectId={id}")
-        self.cur.execute(f"DELETE FROM projects WHERE Id={id}")
-
-        print(self.cur.rowcount)  # Виведення кількості змінених рядків
-
-        # Перевірка успішності виконання запиту
-        if (self.cur.rowcount > 0):
-            return_value = {"message": "Project was successfully deleted", "status code": 204}  # Створення повідомлення про успішне видалення проекту
+    def delete_project(self,id):
+        if(not str(id).isdigit()):
+            return {"message":"Invalid project id", "error": "Bad Request", "status code": 400}
+        
+        self.cur.execute(f"DELETE FROM projects_members WHERE ProjectId={id}");
+        self.cur.execute(f"DELETE FROM tasks WHERE ProjectId={id}");
+        self.cur.execute(f"DELETE FROM reviews WHERE ProjectId={id}");
+        self.cur.execute(f"DELETE FROM payments WHERE ProjectId={id}");
+        self.cur.execute(f"DELETE FROM projects WHERE Id={id}");
+        
+        print(self.cur.rowcount);
+        if(self.cur.rowcount > 0):
+            return_value = {"message":"Project was successfully deleted", "status code": 204};
         else:
-            return_value = {"message": "Nothing to delete", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність проекту для видалення
+            return_value = {"message":"Nothing to delete", "error": "Not Found", "status code": 404};
+        
+    
+        return return_value;
 
-        return return_value  # Повернення результату
+    def update_project(self,data):
+       
+        data = dict(data);
+        return_value = "";
 
-    # Оновлення проекту
-    def update_project(self, data):
-        data = dict(data)  # Конвертація даних у словник
-        return_value = ""  # Ініціалізація змінної для повернення значення
+        if(len(data) == 4):
+            if(not str(data["Id"]).isdigit()):
+                return {"message":"Invalid project id", "error": "Bad Request", "status code": 400};
+        
+            self.cur.execute(f"UPDATE projects SET Name='{data["Name"]}', Description='{data["Description"]}', Status='{data["Status"]}' WHERE Id={data["Id"]}");
 
-        if (len(data) == 4):  # Перевірка кількості ключів у словнику
-            if (not str(data["Id"]).isdigit()):  # Перевірка на правильність формату ідентифікатора
-                return {"message": "Invalid project id", "error": "Bad Request", "status code": 400}  # Створення повідомлення про невірний ідентифікатор
+            print(self.cur.rowcount);
 
-            # Виконання запиту для оновлення даних проекту
-            self.cur.execute(f"UPDATE projects SET Name='{data["Name"]}', Description='{data["Description"]}', Status='{data["Status"]}' WHERE Id={data["Id"]}")
-
-            print(self.cur.rowcount)  # Виведення кількості змінених рядків
-
-            # Перевірка успішності виконання запиту
-            if (self.cur.rowcount > 0):
-                return_value = {"message": "Updated successfully", "status code": 200}  # Створення повідомлення про успішне оновлення даних проекту
+            if(self.cur.rowcount  > 0):
+                return_value = {"message":"Updated successfully", "status code": 200};
             else:
-                return_value = {"message": "Nothing to update", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність проекту для оновлення
+                return_value = {"message":"Nothing to update", "error": "Not Found", "status code": 404};
         else:
-            return_value = {"message": "Invalid amount of keys", "error": "Bad Request", "status code": 400}  # Створення повідомлення про неправильну кількість ключів у словнику
-
-        return return_value  # Повернення результату
-
+            return_value =  {"message":"Invalid amount of keys", "error": "Bad Request", "status code": 400};
+    
+        return return_value;
 ```
 
 ### Users Controller
 
 ```py
-from app import app  # Імпорт екземпляру програми Flask з модуля app
-from users_model import Users  # Імпорт класу Users з модуля users_model
-from flask import request  # Імпорт об'єкту request з Flask для роботи з HTTP-запитами
+from app import app
+from users_model import Users
+from flask import request
 
-users = Users()  # Створення екземпляру класу Users для роботи з користувачами
+users = Users();
 
-# Маршрут для отримання всіх користувачів
 @app.route("/users")
 def get_all_users():
-    return users.get_all_users()
+    return users.get_all_users();
 
-# Маршрут для отримання користувача за його ідентифікатором
 @app.route("/user/<id>")
 def get_user_by_id(id):
-    return users.get_user_by_id(id)
+    return users.get_user_by_id(id);
 
-# Маршрут для отримання користувача за його логіном
 @app.route("/user/login/<Login>")
 def get_user_by_Login(Login):
-    return users.get_user_by_Login(Login)
+    return users.get_user_by_Login(Login);
 
-# Маршрут для додавання нового користувача
 @app.route("/user/add", methods=["POST"])
 def add_user():
-    return users.add_user(request.form)
+    return users.add_user(request.form);
 
-# Маршрут для оновлення інформації про користувача
 @app.route("/user/update", methods=["PUT"])
 def update_user():
-    return users.update_user(request.form)
+    return users.update_user(request.form);
 
-# Маршрут для видалення користувача за його ідентифікатором
 @app.route("/user/delete/<id>", methods=["DELETE"])
 def delete_user(id):
-    return users.delete_user(id)
-
+    return users.delete_user(id);
 
 ```
 
 ### Users Model
 
 ```py
-import json  # Імпорт модуля для роботи з JSON
-import mysql.connector  # Імпорт модуля для роботи з MySQL
-import base64  # Імпорт модуля для роботи з кодуванням base64
+import json
+import mysql.connector
+import base64
 
 class Users:
     def __init__(self):
         try:
-            # Підключення до бази даних MySQL
-            self.con = mysql.connector.connect(host="localhost", user="root", password="db12345!", database='project_db')
-            self.cur = self.con.cursor(dictionary=True)  # Створення курсора для роботи з даними у вигляді словника
-            self.con.autocommit = True  # Встановлення автоматичного підтвердження для автоматичного збереження змін
-            print("succesful connection")  # Виведення повідомлення про успішне з'єднання
+            self.con = mysql.connector.connect(host="localhost",user="root",password="db12345!",database='project_db');
+            self.cur = self.con.cursor(dictionary=True);
+            self.con.autocommit = True;
+            print("succesful connection");
         except:
-            print("failed")  # Виведення повідомлення про невдале з'єднання
-
-    # Отримання всіх користувачів
-    def get_all_users(self):
-        self.cur.execute("SELECT * FROM users")  # Виконання запиту для вибору всіх користувачів
-        result = self.cur.fetchall()  # Отримання результату запиту
-
-        # Перевірка наявності користувачів
-        if(self.cur.rowcount > 0):
-            # Кодування зображення та паролю користувачів у base64
-            for i in range(len(result)):
-                result[i]["Picture"] = str(base64.b64encode(result[i]["Picture"]))
-                result[i]["Password"] = str(base64.b64encode(result[i]["Password"]))
-        else:
-            result = {"message": "There is no users", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність користувачів
-        
-        return result  # Повернення результату
-
-    # Отримання користувача за його ідентифікатором
-    def get_user_by_id(self, id):
-        if (not str(id).isdigit()):  # Перевірка на правильність формату ідентифікатора
-            return {"message": "Invalid user id", "error": "Bad Request", "status code": 400}  # Створення повідомлення про невірний ідентифікатор
-        self.cur.execute(f"SELECT * FROM users where id={id}")  # Виконання запиту для вибору користувача за його ідентифікатором
-        result = self.cur.fetchall()  # Отримання результату запиту
-
-        # Перевірка наявності користувача
-        if(self.cur.rowcount > 0):
-            # Кодування зображення та паролю користувача у base64
-            for i in range(len(result)):
-                result[i]["Picture"] = str(base64.b64encode(result[i]["Picture"]))
-                result[i]["Password"] = str(base64.b64encode(result[i]["Password"]))
-        else:
-            result = {"message": "There is no user with such id", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність користувача
+            print("failed");
     
-        return result  # Повернення результату
 
-    # Отримання користувача за його логіном
-    def get_user_by_Login(self, Login):
-        self.cur.execute(f"SELECT * FROM users WHERE Login='{Login}'")  # Виконання запиту для вибору користувача за його логіном
-        result = self.cur.fetchall()  # Отримання результату запиту
+    def get_all_users(self):
+        self.cur.execute("SELECT * FROM users")
+        result = self.cur.fetchall();
 
-        # Перевірка наявності користувача
         if(self.cur.rowcount > 0):
-            # Кодування зображення та паролю користувача у base64
             for i in range(len(result)):
-                result[i]["Picture"] = str(base64.b64encode(result[i]["Picture"]))
-                result[i]["Password"] = str(base64.b64encode(result[i]["Password"]))
+                result[i]["Picture"] = str(base64.b64encode(result[i]["Picture"]));
+                result[i]["Password"] = str(base64.b64encode(result[i]["Password"]));
         else:
-            result = {"message": "There is no user with such Login", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність користувача
+            result = {"message":"There is no users", "error": "Not Found", "status code": 404}
         
-        return result  # Повернення результату
+        return result;
 
-    # Додавання нового користувача
-    def add_user(self, data):
-        data = dict(data)
-        return_value = ""
+
+    def get_user_by_id(self,id):
+        if (not str(id).isdigit()):
+            return {"message":"Invalid user id", "error": "Bad Request", "status code": 400};
+        self.cur.execute(f"SELECT * FROM users where id={id}");
+        result = self.cur.fetchall();
+
+        if(self.cur.rowcount > 0):
+            for i in range(len(result)):
+                result[i]["Picture"] = str(base64.b64encode(result[i]["Picture"]));
+                result[i]["Password"] = str(base64.b64encode(result[i]["Password"]));
+        else:
+            result = {"message":"There is no user with such id", "error": "Not Found", "status code": 404}
+    
+        return result;
+
+    def get_user_by_Login(self,Login):
+        self.cur.execute(f"SELECT * FROM users WHERE Login='{Login}'")
+        result = self.cur.fetchall();
+
+        if(self.cur.rowcount > 0):
+            for i in range(len(result)):
+                result[i]["Picture"] = str(base64.b64encode(result[i]["Picture"]));
+                result[i]["Password"] = str(base64.b64encode(result[i]["Password"]));
+        else:
+            result = {"message":"There is no user with such Login", "error": "Not Found", "status code": 404}
+        
+        return result;
+
+
+    def add_user(self,data):
+        data = dict(data);
+        return_value = "";
         if (len(data) == 5):
-            self.cur.execute("SELECT Name FROM roles")  # Виконання запиту для отримання всіх ролей
-            result = self.cur.fetchall()  # Отримання результату запиту
-            IsRoleValid = False
+            self.cur.execute("SELECT Name FROM roles");
+            result = self.cur.fetchall();
+            IsRoleValid = False;
 
-            # Перевірка чи існує вказана роль
             for i in range(len(result)):
                 if(result[i]["Name"] == data["Role"]):
-                    IsRoleValid = True
-                    break
+                    IsRoleValid = True;
+                    break;
 
             if (not IsRoleValid):
-                return_value = {"message": "Invalid Role", "error": "Not Found", "status code": 404}  # Створення повідомлення про невірну роль
+                return_value = {"message":"Invalid Role", "error": "Not Found", "status code": 404};
             else:
-                self.cur.execute(f"SELECT Id FROM roles WHERE Name='{data["Role"]}'")
-                RoleId = self.cur.fetchall()
-                RoleId = int(RoleId[0]["Id"])
+                self.cur.execute(f"SELECT Id FROM roles WHERE Name='{data["Role"]}'");
+                RoleId = self.cur.fetchall();
+                RoleId = int(RoleId[0]["Id"]);
 
                 try:
-                    # Додавання нового користувача у базу даних
-                    self.cur.execute(f"INSERT INTO users (Login, Picture, Password, Email, Role) values('{data["Login"]}', '{data["Picture"]}', '{data["Password"]}', '{data["Email"]}', '{data["Role"]}')")
-                    self.cur.execute(f"SELECT Id FROM users WHERE Email='{data["Email"]}'")
-                    user_id = self.cur.fetchall()
-                    user_id = int(user_id[0]["Id"])
-                    self.cur.execute(f"INSERT INTO members (RoleId, UserId) values ({RoleId},{user_id})")
-                    return_value = {"message": "Successfully added to database", "status code": 200}  # Створення повідомлення про успішне додавання користувача
+                    self.cur.execute(f"INSERT INTO users (Login, Picture, Password, Email, Role) values('{data["Login"]}', '{data["Picture"]}', '{data["Password"]}', '{data["Email"]}', '{data["Role"]}')");
+
+                    self.cur.execute(f"SELECT Id FROM users WHERE Email='{data["Email"]}'");
+                    user_id = self.cur.fetchall();
+                    user_id = int(user_id[0]["Id"]);
+
+                    self.cur.execute(f"INSERT INTO members (RoleId, UserId) values ({RoleId},{user_id})");
+                    return_value = {"message":"Successfully added to database", "status code": 200};
                 except:
-                    return_value = {"message": "There is already user with such email or login", "error": "Conflict", "status code": 409}  # Створення повідомлення про вже існуючого користувача з такою електронною поштою або логіном
+                    return_value = {"message":"There is already user with such email or login", "error": "Conflict", "status code": 409};
         else:
-            return_value = {"message": "Invalid amount of keys", "error": "Bad Request", "status code": 400}  # Створення повідомлення про неправильну кількість ключів
+            return_value = {"message":"Invalid amount of keys", "error": "Bad Request", "status code": 400};
+            
+        return return_value;
 
-        return return_value  # Повернення результату
-
-    # Оновлення інформації про користувача
-    def update_user(self, data):
+    def update_user(self,data):
         if(len(dict(data)) != 6):
-            return {"message": "Invalid amount of keys", "error": "Bad Request", "status code": 400}  # Створення повідомлення про неправильну кількість ключів
+            return {"message":"Invalid amount of keys", "error": "Bad Request", "status code": 400};
 
         if(not str(dict(data)["Id"]).isdigit()):
-            return {"message": "Invalid user id", "error": "Bad Request", "status code": 400}  # Створення повідомлення про невірний ідентифікатор користувача
-        self.cur.execute(f"SELECT Name FROM roles")  # Виконання запиту для отримання всіх ролей
-        all_roles = self.cur.fetchall()  # Отримання результату запиту
-        result = "Invalid data"
-        data = dict(data)
+            return {"message":"Invalid user id", "error": "Bad Request", "status code": 400};
+        self.cur.execute(f"SELECT Name FROM roles");
+        all_roles = self.cur.fetchall();
+        result = "Invalid data";
+        data = dict(data);
 
-        IsValidRole = False
+        IsValidRole = False;
 
-        # Перевірка чи існує вказана роль
         for i in range(len(all_roles)):
             if(all_roles[i]["Name"] == data["Role"]):
-                IsValidRole = True
-                break
+                IsValidRole = True;
+                break;
         
         if (IsValidRole):
-            self.cur.execute(f"SELECT Id FROM roles WHERE Name='{data["Role"]}'")
-            id_of_Role = self.cur.fetchall()
-            id_of_Role = int(id_of_Role[0]["Id"])
+            self.cur.execute(f"SELECT Id FROM roles WHERE Name='{data["Role"]}'");
+            id_of_Role = self.cur.fetchall();
+            id_of_Role = int(id_of_Role[0]["Id"]);
             try:
-                self.cur.execute(f"UPDATE members SET RoleId={id_of_Role}")  # Оновлення ролі користувача
-                self.cur.execute(f"UPDATE users SET Login='{data["Login"]}', Picture='{data["Picture"]}', Password='{data["Password"]}', Email='{data["Email"]}', Role='{data["Role"]}' WHERE Id={data["Id"]}")  # Оновлення даних користувача
-
+                self.cur.execute(f"UPDATE members SET RoleId={id_of_Role}");
+                self.cur.execute(f"UPDATE users SET Login='{data["Login"]}', Picture='{data["Picture"]}', Password='{data["Password"]}', Email='{data["Email"]}', Role='{data["Role"]}' WHERE Id={data["Id"]}");
+                
                 if (self.cur.rowcount == 0):
-                    result = {"message": "Nothing to update", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність користувача для оновлення
+                    result = {"message":"Nothing to update", "error": "Not Found", "status code": 404};
                 else:
-                    result = {"message": "Updated successfully", "status code": 200}  # Створення повідомлення про успішне оновлення даних користувача
+                    result = {"message":"Updated successfully", "status code": 200};
             except:
-                result = {"message": "There is already user with such email or login", "error": "Conflict", "status code": 409}  # Створення повідомлення про вже існуючого користувача з такою електронною поштою або логіном
+                result = {"message":"There is already user with such email or login", "error": "Conflict", "status code": 409};
         else:
-            result = {"message": "Invalid Role", "error": "Not Found", "status code": 404}  # Створення повідомлення про невірну роль
+            result = {"message":"Invalid Role", "error": "Not Found", "status code": 404}
 
-        return result  # Повернення результату
+        return result;
 
-    # Видалення користувача за його ідентифікатором
-    def delete_user(self, id):
 
-        if(not str(id).isdigit()):  # Перевірка на правильність формату ідентифікатора
-            return {"message": "Invalid user id", "error": "Bad Request", "status code": 400}  # Створення повідомлення про невірний ідентифікатор користувача
+    def delete_user(self,id):
+
+        if(not str(id).isdigit()):
+            return {"message":"Invalid user id", "error": "Bad Request", "status code": 400};
     
-        self.cur.execute(f"SELECT Id FROM members WHERE UserId={id}")  # Виконання запиту для отримання ідентифікатора користувача
-        result = self.cur.fetchall()  # Отримання результату запиту
+        self.cur.execute(f"SELECT Id FROM members WHERE UserId={id}");
+
+        result = self.cur.fetchall();
 
         if(len(result) != 0):
-            member_id = int(result[0]["Id"])
-            self.cur.execute(f"DELETE FROM projects_members WHERE MemberId={member_id}")  # Видалення користувача з участі в проектах
+            member_id = int(result[0]["Id"]);
+            self.cur.execute(f"DELETE FROM projects_members WHERE MemberId={member_id}");
 
-        self.cur.execute(f"DELETE FROM members WHERE UserId={id}")  # Видалення користувача з таблиці учасників
-        self.cur.execute(f"DELETE FROM users WHERE Id={id}")  # Видалення користувача з таблиці користувачів
+        self.cur.execute(f"DELETE FROM members WHERE UserId={id}");
+        self.cur.execute(f"DELETE FROM users WHERE Id={id}");
         
         if(self.cur.rowcount == 0 ):
-            result = {"message": "Nothing to delete", "error": "Not Found", "status code": 404}  # Створення повідомлення про відсутність користувача для видалення
+            result = {"message":"Nothing to delete", "error": "Not Found", "status code": 404};
         else:
-            result = {"message": "User was successfully deleted", "status code": 204}  # Створення повідомлення про успішне видалення користувача
+            result = {"message":"User was successfully deleted", "status code": 204};
 
-        return result  # Повернення результату
-
+        return result;
 ```
